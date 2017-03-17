@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rechnungstrolle</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Full Screen">
+	
+	<link href="http://www.yoursite.com/apple-touch-icon.png" rel="apple-touch-icon" />
+	<link href="http://www.yoursite.com/apple-touch-icon-152x152.png" rel="apple-touch-icon" sizes="152x152" />
+	<link href="http://www.yoursite.com/apple-touch-icon-167x167.png" rel="apple-touch-icon" sizes="167x167" />
+	<link href="http://www.yoursite.com/apple-touch-icon-180x180.png" rel="apple-touch-icon" sizes="180x180" />
+	<link href="http://www.yoursite.com/icon-hires.png" rel="icon" sizes="192x192" />
+	<link href="http://www.yoursite.com/icon-normal.png" rel="icon" sizes="128x128" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, minimal-ui">
+
+    <script src="Events.js"></script>
+    <script src="Objekte.js"></script>
+    <script src="Dijkstra.js"></script>
+    <script src="Animation.js"></script>
+    <script src="https://code.createjs.com/easeljs-0.8.2.min.js"> </script>
+    <script src="https://code.createjs.com/soundjs-0.6.2.min.js"></script></head>
+    <link rel="stylesheet" href="style.css">
+
+
+
+</head>
+<body onload="init();">
+<canvas id="myCanvas" width="800" height="800" ></canvas>
+<script>
+    var meineObjekte = new Array();
+    var weg = new Array();
+    var start = 199;
+    var canvas = document.getElementById("myCanvas");
+    var context = canvas.getContext("2d");
+    stage = new createjs.Stage(canvas);
+    var breite ;
+    var hohe ;
+    var sprite;
+
+
+
+
+
+
+    var images =    ["./Map/Wiese.png", "./Map/Baum.png", "./Map/MarketFloorL.png",
+                    "./Map/MarketFloorR.png", "./Map/MarketTopL.png",
+                    "./Map/MarketTopR.png", "./Map/HausFloorR.png"];
+
+
+/*
+    function toggleFullScreen() {
+        if (!document.mozFullScreen && !document.webkitFullScreen) {
+            if (canvas.mozRequestFullScreen) {
+                canvas.mozRequestFullScreen();
+            } else {
+                canvas.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+            }
+        }
+    }
+
+    document.addEventListener("click", function(e) {
+        toggleFullScreen();
+    }, false);
+*/
+    function init() {
+
+        console.log("init");
+        context.canvas.width = window.innerWidth;
+        context.canvas.height = window.innerHeight;
+        /*
+        var soundID = "Thunder";
+        createjs.Sound.registerSound("assets/thunder.mp3", soundID);
+        createjs.Sound.play(soundID);
+        */
+
+        hohe = Math.floor(window.innerHeight / 19);
+        breite = Math.floor(window.innerWidth / 19);
+
+        var loadedImagesCount = 0;
+        var loadedImagePlayerCount = 0;
+        tiles = [];
+
+        for (var x = 0; x < images.length; x++) {
+            var imageObj = new Image(); // new instance for each image
+            imageObj.src = images[x];
+            imageObj.onload = function () {
+                loadedImagesCount++;
+                if (loadedImagesCount == 7)
+                    createMapWithIndex();
+            };
+
+
+            tiles.push(imageObj);
+        }
+
+
+        function createMapWithIndex() {
+            var ziel;
+
+            isFullscreenAvailable = document.fullscreenEnabled;
+
+            var mapArray = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                            [1, 1, 4, 5, 1, 1, 1, 1, 4, 5, 1, 1, 4, 5, 1, 0, 0, 0, 1],
+                            [1, 1, 2, 3, 1, 1, 1, 1, 2, 6, 1, 1, 2, 6, 1, 0, 0, 0, 1],
+                            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1],
+                            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1],
+                            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1],
+                            [1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1],
+                            [1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1],
+                            [1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+                            [1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+                            [1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+                            [1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+                            [0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1],
+                            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                            [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1]];
+
+            var posX = 0;
+            var posY = 0;
+
+            var hausNr22 = 0;
+            var hausNr33 = 0;
+            var hausNr44 = 0;
+            var hausNr55 = 0;
+            var hausNr66 = 0;
+
+
+            var hausArt;
+            var count = 0;
+            console.log("h:" + hohe + "   b:" + breite);
+
+            for (var y = 0; y < mapArray.length; y++) {
+                for (var x = 0; x < mapArray[y].length; x++) {
+                    //                 context.drawImage(tiles[mapArray[y][x]], posX, posY, breite, hohe);
+                    var index = mapArray[y][x];
+
+                    var bitmap = new createjs.Bitmap(tiles[index]);
+
+                    stage.addChild(bitmap);
+
+                    bitmap.x = posX;
+                    bitmap.y = posY;
+                    bitmap.scaleX = breite / 70;
+
+                    bitmap.scaleY = hohe / 40;
+
+
+                    stage.update();
+
+
+                    if (mapArray[y][x] == 0) {
+                        var wiese = new Wiese(posX, posY, count);
+                        meineObjekte.splice(count, 0, wiese);
+                        count++;
+
+
+                    }
+                    else if (mapArray[y][x] == 1) {
+                        var baum = new Baum(posX, posY, count);
+                        meineObjekte.splice(count, 0, baum);
+                        count++;
+
+                    }
+                    else if (mapArray[y][x] == 2) {
+                        var hausLinks = new HausBodenL(posX, posY, count);
+
+                        switch (hausNr22) {
+                            case 0:
+                                hausArt = "Market";
+                                hausNr22++;
+                                break;
+                            case 1:
+                                hausArt = "Rechnungswesen";
+                                hausNr22++;
+                                break;
+
+                            case 2:
+                                hausArt = "Betriebswirtschaft";
+                                hausNr22++;
+                                hausArt == null;
+                                break;
+
+                        }
+                        hausLinks.art(hausArt);
+                        meineObjekte.splice(count, 0, hausLinks);
+                        count++;
+
+                    }
+                    else if (mapArray[y][x] == 3) {
+                        var hausRechtsM = new HausMarketRechts(posX, posY, count);
+                        switch (hausNr33) {
+                            case 0:
+                                hausArt = "Market";
+                                hausNr33++;
+                                break;
+                            case 1:
+                                hausArt = "Rechnungswesen";
+                                hausNr33++;
+                                break;
+
+                            case 2:
+                                hausArt = "Betriebswirtschaft";
+                                hausNr33++;
+                                hausArt == null;
+                                break;
+
+                        }
+                        hausRechtsM.art(hausArt);
+                        meineObjekte.splice(count, 0, hausRechtsM);
+                        hausArt = null;
+                        count++;
+
+                    }
+                    else if (mapArray[y][x] == 4) {
+                        switch (hausNr44) {
+                            case 0:
+                                hausArt = "Market";
+                                hausNr44++;
+                                break;
+                            case 1:
+                                hausArt = "Rechnungswesen";
+                                hausNr44++;
+                                break;
+
+                            case 2:
+                                hausArt = "Betriebswirtschaft";
+                                hausNr44++;
+                                break;
+
+                        }
+                        var dachLinks = new HausDachL(posX, posY, count);
+                        dachLinks.art(hausArt);
+                        meineObjekte.splice(count, 0, dachLinks);
+                        hausArt == null;
+                        count++;
+
+                    }
+                    else if (mapArray[y][x] == 5) {
+                        switch (hausNr55) {
+                            case 0:
+                                hausArt = "Market";
+                                hausNr55++;
+                                break;
+                            case 1:
+                                hausArt = "Rechnungswesen";
+                                hausNr55++;
+                                break;
+
+                            case 2:
+                                hausArt = "Betriebswirtschaft";
+                                hausNr55++;
+                                break;
+
+                        }
+                        var dachRechts = new HausDachR(posX, posY, count);
+                        dachRechts.art(hausArt);
+                        meineObjekte.splice(count, 0, dachRechts);
+                        hausArt = null;
+                        count++;
+
+                    }
+                    else if (mapArray[y][x] == 6) {
+
+                        switch (hausNr66) {
+                            case 0:
+                                hausArt = "Market";
+                                hausNr66++;
+                                break;
+                            case 1:
+                                hausArt = "Rechnungswesen";
+                                hausNr66++;
+                                break;
+
+                            case 2:
+                                hausArt = "Betriebswirtschaft";
+                                hausNr66++;
+                                break;
+
+                        }
+                        var hausBodenR = new HausBodenR(posX, posY, count);
+                        hausBodenR.art(hausArt);
+                        meineObjekte.splice(count, 0, hausBodenR);
+                        hausArt = null;
+                        count++;
+
+                    }
+                    posX += breite;
+                }
+                posX = 0;
+                posY += hohe;
+            }
+
+            setNachbarn(mapArray, meineObjekte);
+
+            ziel = meinHandler("myCanvas", "click", getMouseObject(meineObjekte));
+
+
+            function getMouseObject(meineObjekte) {
+
+
+                    document.onclick = function (e) {
+                        var posX = e.pageX;
+                        var posY = e.pageY;
+
+
+                        for (var i = 0; i < meineObjekte.length; i++) {
+                            if ((meineObjekte[i].xPos <= posX) && (meineObjekte[i].xPos + breite >= posX) && (meineObjekte[i].yPos <= posY) && (meineObjekte[i].yPos + hohe >= posY)) {
+                                //      alert("Objekt:" + meineObjekte[i].key + "\nLeft:" + meineObjekte[i].left + "\nRight" + meineObjekte[i].right + "\nUp:" + meineObjekte[i].up + "\nDown:" + meineObjekte[i].down + "\nBegehbar:" + meineObjekte[i].betretbar);
+                                if (meineObjekte[i].betretbar) {
+                                    ziel = meineObjekte[i].key;
+                                } else {
+                                    alert("kein gültiges FELD");
+                                    ziel = start;
+                                }
+                            }
+                        }
+                        weg = dijkstra(start, ziel, meineObjekte);
+                        console.log(weg);
+                        var count;
+                        animation(stage, weg, meineObjekte, hohe, breite);
+
+                //        start = ziel;
+                        return ziel;
+                    }
+                }
+            }
+
+
+
+
+    }
+</script>
+</body>
+</html>
