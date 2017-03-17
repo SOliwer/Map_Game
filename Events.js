@@ -52,6 +52,8 @@ function setNachbarn(mapArray,meineObjekte) {
                 else {
                     right = key + 1;
                     if (meineObjekte[right].betretbar) meineObjekte[countkey].setRight(right);
+
+
                 }
                 if (key + 19 > 360)down = null;
                 else {
